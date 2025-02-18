@@ -1,25 +1,52 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Open Camera</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WiFi QR Code Scanner</title>
+  <!-- Include the html5-qrcode library from CDN -->
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <style>
+    #qr-reader { width: 300px; margin: auto; }
+    #qr-reader-results { margin-top: 20px; text-align: center; }
+  </style>
 </head>
 <body>
-    <h2>Open Camera from Browser</h2>
-    <video id="camera" autoplay playsinline></video>
-    <br>
-    <button onclick="startCamera()">Open Camera</button>
-    <script>
-        async function startCamera() {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-                document.getElementById('camera').srcObject = stream;
-            } catch (error) {
-                console.error("Error accessing camera:", error);
-                alert("Failed to access the camera. Please allow camera permissions.");
-            }
-        }
-    </script>
+  <h2 style="text-align:center;">Scan WiFi QR Code</h2>
+  <div id="qr-reader"></div>
+  <div id="qr-reader-results"></div>
+  <script>
+    // This function is called each time a QR code is successfully scanned.
+    function onScanSuccess(decodedText, decodedResult) {
+      // Display the raw QR code result
+      document.getElementById("qr-reader-results").innerText = "Scanned Result: " + decodedText;
+      
+      // Check if the QR code follows the WiFi format
+      if (decodedText.startsWith("WIFI:")) {
+        // Remove "WIFI:" prefix and the ending ";;"
+        const wifiContent = decodedText.slice(5, decodedText.endsWith(";;") ? -2 : decodedText.length);
+        const params = wifiContent.split(";");
+        let encryption = "", ssid = "", password = "";
+        
+        params.forEach(param => {
+          if (param.startsWith("T:")) encryption = param.slice(2);
+          if (param.startsWith("S:")) ssid = param.slice(2);
+          if (param.startsWith("P:")) password = param.slice(2);
+        });
+        
+        alert("WiFi Details:\nSSID: " + ssid + "\nPassword: " + password + "\nEncryption: " + encryption + "\n\nPlease connect manually from your device's WiFi settings.");
+      } else {
+        alert("This QR code does not contain WiFi details.");
+      }
+      
+      // Optionally, stop scanning after a successful scan:
+      html5QrcodeScanner.clear();
+    }
+    
+    // Configure and render the QR code scanner
+    let html5QrcodeScanner = new Html5QrcodeScanner(
+      "qr-reader", { fps: 10, qrbox: 250 });
+    html5QrcodeScanner.render(onScanSuccess);
+  </script>
 </body>
 </html>
